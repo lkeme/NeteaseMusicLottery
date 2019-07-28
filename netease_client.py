@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import random
+import re
 import time
+import random
 import traceback
 import pymysql
 import requests
@@ -191,6 +192,15 @@ class NeteaseLottery():
 
     # 扫描动态
     def scan_lottery_id(self):
+        # 匹配抽奖id
+        def match_lottery_id(json_data):
+            pattern = r'\"lotteryId\":(\d+),\"status\":(\d)'
+            str_data = str(json_data) \
+                .replace(" ", "") \
+                .replace("\n", "") \
+                .replace("\r", "")
+            return re.findall(pattern, str_data)
+
         url = 'http://music.163.com/weapi/act/event?csrf_token='
         scan_page = 10
         max_page = '100'
@@ -200,6 +210,7 @@ class NeteaseLottery():
             '抽奖活动': '17731067',
             '转发抽奖': '20397151',
             '抽奖福利': '19873053',
+            '粉丝福利': '3753053'
         }
         for actid in actids.keys():
             for page in range(0, scan_page):
@@ -217,18 +228,24 @@ class NeteaseLottery():
                         }
                         params = self.enc_params.get(params)
                         response = self.session.post(url, params=params).json()
-                        events = response['events']
-                        for event in events:
-                            event_data = event['lotteryEventData']
+                        # 匹配 未过滤
+                        match_data_all = match_lottery_id(response)
 
-                            if event_data is None or \
-                                    event_data['lotteryId'] \
-                                    in self.lottery_list or \
-                                    event_data['status'] == "2":
+                        for match_data in match_data_all:
+                            try:
+                                lottery_id = int(match_data[0])
+                                lottery_status = int(match_data[1])
+                            except Exception as e:
                                 continue
+                            status = 'valid' if lottery_status == 1 else 'invalid'
                             printer(
-                                f"title: {event_data['title']}, lotteryId: {event_data['lotteryId']}, status: {event_data['status']}")
-                            self.lottery_list.append(event_data['lotteryId'])
+                                f"title: {actid}, lotteryId: {lottery_id}, status: {status}"
+                            )
+                            if lottery_id in self.lottery_list or \
+                                    lottery_status == 2:
+                                continue
+
+                            self.lottery_list.append(lottery_id)
                         lasttime = response['lasttime']
                         break
                     except Exception as e:
