@@ -98,6 +98,7 @@ class NeteaseLogin:
         try:
             return self.session.post(url, headers=self.headers, data=payload)
         except Exception as e:
+            # print(e)
             return {'code': 501, 'msg': str(e)}
 
     # 手机登录
@@ -132,7 +133,7 @@ class NeteaseLogin:
         if json_resp['code'] == 200:
             printer(f"[INFO]: Account -> {username}, login successfully...")
             return self.session
-        elif json_resp['501'] == 501:
+        elif json_resp['code'] == 501:
             raise RuntimeError(
                 f"[ERROR]: Account -> {username}, fail to login, {json_resp['msg']}..."
             )
