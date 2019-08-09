@@ -4,6 +4,7 @@ import re
 import time
 import random
 import traceback
+import asyncio
 import pymysql
 import requests
 from lib import NeteaseLogin, EncryptParams, printer
@@ -91,13 +92,28 @@ def query_data_db(table='event_information'):
     return row_list
 
 
+# 查询转发数据库
+def query_valid_db(table='event_information'):
+    db, cur = db_conn()
+    now_time = current_unix()
+    sql = f'select * from {table} where lottery_time > %s; '
+    cur.execute(sql, (now_time,))
+    row_list = cur.fetchall()
+    db.close()
+    cur.close()
+    # printer(row_list)
+    printer(f"INFO: 查询有效数据库完毕 DATA: {len(row_list)}")
+
+    return row_list
+
+
 # 查询删除数据库
 def query_delete_db(table='event_information'):
     db, cur = db_conn()
     row_list = []
     now_time = current_unix()
     sql = f'select * from {table} where ((lottery_time + 43200*1000) < %s and is_reposted=1 and is_deleted=0);'
-    cur.execute(sql, (now_time))
+    cur.execute(sql, (now_time,))
     for row in cur.fetchall():
         row_list.append(row)
     db.close()
@@ -116,7 +132,9 @@ def query_repost_db(table='event_information'):
     row_list = cur.fetchall()
     db.close()
     cur.close()
-    printer(row_list)
+    # printer(row_list)
+    printer(f"INFO: 查询转发数据库完毕 DATA: {len(row_list)}")
+
     return row_list
 
 
@@ -160,13 +178,14 @@ def insert_data(uid, event_msg, event_id, lottery_id, lottery_time,
         db.close()
 
 
-class NeteaseLottery():
+class NeteaseLottery:
 
     def __init__(self):
         self.session = NeteaseLogin().login(username, password)
         # self.session = requests.Session()
         self.enc_params = EncryptParams()
         self.lottery_list = []
+        self.pre_scan_list = []
         self.session.headers.update(
             {
                 'User-Agent': 'NeteaseMusic/5.9.1.1551789389(137);Dalvik/2.1.0 (Linux; U; Android 6.0.1; oneplus a5010 Build/V417IR)',
@@ -177,18 +196,30 @@ class NeteaseLottery():
             'scan': 0,
         }
 
-    def monitor(self):
+    # 扫描存储
+    async def server(self):
         while True:
             try:
                 self.scan_lottery_id()
                 self.repeat_lottery()
+                self.repeat_lottery_scan()
+                printer('[SERVER] 休眠八小时，稍后继续')
+                await asyncio.sleep(8 * 60 * 60)
+            except Exception as e:
+                printer('[SERVER] 流程出错,稍后重试', e)
+                await asyncio.sleep(60)
+
+    # 转发删除
+    async def client(self):
+        while True:
+            try:
                 self.repost()
                 self.rollback()
-                printer('休眠一小时，稍后继续')
-                time.sleep(3600)
+                printer('[CLIENT] 休眠一小时，稍后继续')
+                await asyncio.sleep(60 * 60)
             except Exception as e:
-                printer('流程出错,稍后重试', e)
-                time.sleep(30)
+                printer('[CLIENT] 流程出错,稍后重试', e)
+                await asyncio.sleep(60)
 
     # 扫描动态
     def scan_lottery_id(self):
@@ -241,8 +272,8 @@ class NeteaseLottery():
                             printer(
                                 f"title: {actid}, lotteryId: {lottery_id}, status: {status}"
                             )
-                            if lottery_id in self.lottery_list or \
-                                    lottery_status == 2:
+                            if lottery_id in self.lottery_list:
+                                # or lottery_status == 2:
                                 continue
 
                             self.lottery_list.append(lottery_id)
@@ -259,16 +290,42 @@ class NeteaseLottery():
     # 获取动态信息
     def get_lottery_info(self, lottery_id):
         url = f"http://music.163.com/api/lottery/event/get?lotteryId={lottery_id}"
-        response = self.session.get(url).json()
-        data = {
-            'uid': response['data']['user']['userId'],
-            'event_msg': response['data']['event']['eventMsg'],
-            'event_id': response['data']['lottery']['eventId'],
-            'lottery_id': response['data']['lottery']['lotteryId'],
-            'lottery_time': response['data']['lottery']['lotteryTime'],
-            'status': response['data']['lottery']['status']
-        }
-        return data
+        try:
+            response = self.session.get(url).json()
+            if response['code'] == 200:
+                data = {
+                    'uid': response['data']['user']['userId'],
+                    'event_msg': response['data']['event']['eventMsg'],
+                    'event_id': response['data']['lottery']['eventId'],
+                    'lottery_id': response['data']['lottery']['lotteryId'],
+                    'lottery_time': response['data']['lottery']['lotteryTime'],
+                    'status': response['data']['lottery']['status']
+                }
+                printer(f"[SERVER] {lottery_id} -> 命中抽奖")
+                return data
+            elif response['code'] == 404:
+                printer(f"[SERVER] {lottery_id} -> {response['message']}")
+            else:
+                printer(f"[SERVER] {lottery_id} -> {response}")
+            return None
+        except Exception as e:
+            printer(f"[SERVER] {lottery_id} -> {e}")
+            # {"code":404,"message":"动态资源不存在","debugInfo":null}
+            return None
+
+    # 区间
+    def find_section(self, id):
+        # TODO 代码丑陋 待优化
+        length = len(str(id)) - 1
+        prefix = str(id)[0]
+        start = int(prefix + "".join(['0' for _ in range(length)]))
+        end = int(prefix + "".join(['9' for _ in range(length)])) + 2
+        self.pre_scan_list = self.pre_scan_list + list(range(start, end))
+        self.pre_scan_list = list(set(self.pre_scan_list))
+        # 第二方案
+        # self.pre_scan_list = list(set(self.pre_scan_list).union(set(list(range(start, end)))))
+        # printer(f"当前区间 {start},{end} 已有数据 {len(self.pre_scan_list)}")
+        return None
 
     # 去重
     def repeat_lottery(self):
@@ -276,16 +333,40 @@ class NeteaseLottery():
         temp_lottery_list = []
         for lottery in lottery_data:
             temp_lottery_list.append(lottery['lottery_id'])
+        printer(f"[SERVER] 当前共有 {len(self.lottery_list)} 个需要去重")
         for lottery_id in self.lottery_list:
             if lottery_id in temp_lottery_list:
                 continue
             data = self.get_lottery_info(lottery_id)
-            if data['status'] == 2:
-                continue
+            # if data['status'] == 2:
+            #     continue
             insert_data(data['uid'], data['event_msg'], data['event_id'],
                         data['lottery_id'], data['lottery_time'])
         self.lottery_list = []
-        printer('动态库存清理成功')
+        printer(f"[SERVER] 动态库存去重成功")
+
+    # 去重扫描
+    def repeat_lottery_scan(self):
+        lottery_data = query_valid_db()
+        temp_lottery_list = []
+        for lottery in lottery_data:
+            temp_lottery_list.append(lottery['lottery_id'])
+        for lottery_id in temp_lottery_list:
+            self.find_section(lottery_id)
+        printer(f"[SERVER] 当前共有 {len(self.pre_scan_list)} 个需要扫描")
+        for index, lottery_id in enumerate(self.pre_scan_list):
+            # if index % 99 == 0:
+            #     asyncio.sleep(60)
+            if lottery_id in temp_lottery_list:
+                continue
+            data = self.get_lottery_info(lottery_id)
+            if data is None:
+                continue
+            insert_data(data['uid'], data['event_msg'], data['event_id'],
+                        data['lottery_id'], data['lottery_time'])
+
+        self.pre_scan_list = []
+        printer(f"[SERVER] 动态去重扫描成功")
 
     # 转发
     def forward(self, event_id, event_uid, msg):
@@ -314,7 +395,7 @@ class NeteaseLottery():
         }
         params = self.enc_params.get(params)
         response = self.session.post(url, params=params).json()
-        printer(response)
+        printer(f"[CLIENT] forward -> {response}")
 
     # 关注
     def follow(self, follow_uid):
@@ -327,7 +408,7 @@ class NeteaseLottery():
         }
         params = self.enc_params.get(params)
         response = self.session.post(url, params=params).json()
-        printer(response)
+        printer(f"[CLIENT] follow -> {response}")
 
     # 取消关注
     def unfollow(self, follow_uid):
@@ -340,7 +421,7 @@ class NeteaseLottery():
         }
         params = self.enc_params.get(params)
         response = self.session.post(url, params=params).json()
-        printer(response)
+        printer(f"[CLIENT] unfollow -> {response}")
 
     # 转发
     def repost(self):
@@ -374,7 +455,7 @@ class NeteaseLottery():
         }
         params = self.enc_params.get(params)
         response = self.session.post(url, params=params).json()
-        printer(response)
+        printer(f"[CLIENT] del_event -> {response}")
 
     # rollbak
     def rollback(self):
@@ -405,4 +486,11 @@ class NeteaseLottery():
 
 
 if __name__ == '__main__':
-    NeteaseLottery().monitor()
+    net_ease = NeteaseLottery()
+    tasks = [
+        net_ease.server(),
+        net_ease.client()
+    ]
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(asyncio.wait(tasks))
+    loop.close()

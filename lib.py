@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 
 import os
@@ -6,6 +6,8 @@ import json
 import codecs
 import base64
 import hashlib
+import re
+import random
 import time
 import requests
 from Crypto.Cipher import AES
@@ -20,7 +22,8 @@ def printer(info, *args):
     print(content)
 
 
-class EncryptParams():
+# 参数加解密
+class EncryptParams:
 
     def __init__(self):
         self.modulus = '00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7'
@@ -61,69 +64,96 @@ class EncryptParams():
             map(lambda xx: (hex(ord(xx))[2:]), str(os.urandom(size)))))[0:16]
 
 
-class NeteaseLogin():
+class NeteaseLogin:
+
     def __init__(self, **kwargs):
-        self.login_headers = {
-            'Accept': '*/*',
-            'Accept-Language': 'zh-CN,zh;q=0.8,gl;q=0.6,zh-TW;q=0.4',
-            'Connection': 'keep-alive',
+        self.ua_list = [
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:46.0) Gecko/20100101 Firefox/46.0',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/603.2.4 (KHTML, like Gecko) Version/10.1.1 Safari/603.2.4',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:46.0) Gecko/20100101 Firefox/46.0',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/13.10586'
+        ]
+        self.headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Referer': 'http://music.163.com',
-            'Host': 'music.163.com',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36'
+            'Origin': 'https://music.163.com',
+            'Referer': 'https://music.163.com/',
+            'Cookie': 'os=pc',
+            'User-Agent': random.choice(self.ua_list)
         }
-        self.login_url_email = 'http://music.163.com/weapi/login?csrf_token='
-        self.login_url_phone = 'http://music.163.com/weapi/login/cellphone?csrf_token='
         self.enc = EncryptParams()
         self.session = requests.Session()
 
-    '''登录函数'''
-
-    def login(self, username, password, version='pc'):
-        printer(username, password)
-        if version == 'mobile':
-            return None
-        elif version == 'pc':
-            account_type = self.__getAccountType(username)
-            md5 = hashlib.md5()
-            md5.update(password.encode('utf-8'))
-            password = md5.hexdigest()
-            data = {
-                'password': password,
-                'rememberLogin': True
-            }
-            if account_type == 'phone':
-                data['phone'] = username
-                data = self.enc.get(data)
-                res = self.session.post(self.login_url_phone,
-                                        headers=self.login_headers, data=data)
-            else:
-                data['username'] = username
-                data = self.enc.get(data)
-                res = self.session.post(self.login_url_phone,
-                                        headers=self.login_headers, data=data)
-            if res.json()['code'] == 200:
-                print(
-                    '[INFO]: Account -> %s, login successfully...' % username)
-                return self.session
-            else:
-                raise RuntimeError(
-                    'Account -> %s, fail to login, username or password error...' % username)
-        else:
-            raise ValueError(
-                'Unsupport argument in music163.login -> version %s, expect <mobile> or <pc>...' % version)
-
-    '''获取账号类型(手机号/邮箱)'''
-
-    def __getAccountType(self, username):
+    # 邮箱登录
+    def email_login(self, username, password):
+        url = 'https://music.163.com/weapi/login?csrf_token='
+        text = {
+            'username': username,
+            'password': password,
+            'rememberLogin': 'true',
+            'csrf_token': ''
+        }
+        payload = self.enc.get(text)
         try:
-            int(username)
-            account_type = 'phone'
-        except:
-            account_type = 'email'
-        return account_type
+            return self.session.post(url, headers=self.headers, data=payload)
+        except Exception as e:
+            return {'code': 501, 'msg': str(e)}
+
+    # 手机登录
+    def phone_login(self, username, password):
+        url = 'https://music.163.com/weapi/login/cellphone'
+        text = {
+            'phone': username,
+            'password': password,
+            'rememberLogin': 'true',
+            'csrf_token': ''
+        }
+        payload = self.enc.get(text)
+        try:
+            return self.session.post(url, headers=self.headers, data=payload)
+        except Exception as e:
+            return {'code': 501, 'msg': str(e)}
+
+    # 登录
+    def login(self, username, password):
+        # printer(username, password)
+        account_type = self.match_login_type(username)
+        md5 = hashlib.md5()
+        md5.update(password.encode('utf-8'))
+        password = md5.hexdigest()
+
+        # 为了后期考虑，暂时拆分登陆
+        if account_type == 'phone':
+            response = self.phone_login(username, password)
+        else:
+            response = self.email_login(username, password)
+        json_resp = response.json()
+        if json_resp['code'] == 200:
+            printer(f"[INFO]: Account -> {username}, login successfully...")
+            return self.session
+        elif json_resp['501'] == 501:
+            raise RuntimeError(
+                f"[ERROR]: Account -> {username}, fail to login, {json_resp['msg']}..."
+            )
+        else:
+            raise RuntimeError(
+                f"[ERROR]: Account -> {username}, fail to login, username or password error..."
+            )
+
+    # 匹配登录类型
+    def match_login_type(self, username):
+        # 正则方案
+        pattern = re.compile(r'^1\d{2,3}\d{7,8}$|^1[34578]\d{9}$')
+        return 'phone' if pattern.match(username) else 'email'
+        # int报错方案
+        # try:
+        #     int(username)
+        #     login_type = 'phone'
+        # except:
+        #     login_type = 'email'
+        # return login_type
 
 
 if __name__ == '__main__':
-    session = NeteaseLogin().login('', '')
-    params = EncryptParams().get('')
+    pass
