@@ -129,7 +129,11 @@ class NeteaseLogin:
             response = self.phone_login(username, password)
         else:
             response = self.email_login(username, password)
-        json_resp = response.json()
+        # 判断字典
+        if not isinstance(response, dict):
+            json_resp = response.json()
+        else:
+            json_resp = response
         if json_resp['code'] == 200:
             printer(f"[INFO]: Account -> {username}, login successfully...")
             return self.session
@@ -139,7 +143,7 @@ class NeteaseLogin:
             )
         else:
             raise RuntimeError(
-                f"[ERROR]: Account -> {username}, fail to login, username or password error..."
+                f"[ERROR]: Account -> {username}, fail to login, {json_resp}..."
             )
 
     # 匹配登录类型
