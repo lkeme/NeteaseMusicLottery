@@ -29,25 +29,23 @@ database = 'netease'
 
 # 中奖发送
 def server_chan(title="", content=""):
-    while True:
-        try:
-            if sc_key != '':
-                url = f'https://sc.ftqq.com/{sc_key}.send'
-                data = {
-                    'text': title,
-                    'desp': content
-                }
-                headers = {
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                    'Referer': 'http://sc.ftqq.com/?c=code',
-                }
-                response = requests.post(url, headers=headers, data=data,
-                                         timeout=30).json()
-                if response['errmsg'] == 'success':
-                    return True
-        except:
-            continue
-
+    try:
+        if sc_key != '':
+            url = f'https://sc.ftqq.com/{sc_key}.send'
+            data = {
+                'text': title,
+                'desp': content
+            }
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Referer': 'http://sc.ftqq.com/?c=code',
+            }
+            response = requests.post(url, headers=headers, data=data,
+                                     timeout=30).json()
+            if response['errmsg'] == 'success':
+                return True
+    except Exception as e:
+        printer(f"[SERCERCHAN] {e}")
     return False
 
 
@@ -112,7 +110,7 @@ def query_delete_db(table='event_information'):
     db, cur = db_conn()
     row_list = []
     now_time = current_unix()
-    sql = f'select * from {table} where ((lottery_time + 43200*1000) < %s and is_reposted=1 and is_deleted=0);'
+    sql = f'select * from {table} where ((lottery_time + 3600*1000) < %s and is_reposted=1 and is_deleted=0);'
     cur.execute(sql, (now_time,))
     for row in cur.fetchall():
         row_list.append(row)
@@ -423,9 +421,9 @@ class NeteaseLottery:
         response = self.session.post(url, params=params).json()
         printer(f"[CLIENT] unfollow -> {response}")
 
-    # 转发
+    # 转发动态
     def repost(self):
-        message = random.choice([
+        messages = [
             '转发动态', '转发动态', '转发动态', '转发动态', '转发动态', '', '', '好运来', '脱非转欧',
             '啊~',
             '哈哈哈',
@@ -437,13 +435,14 @@ class NeteaseLottery:
             '中奖', '什么时候才会抽到我呢？', '试试水，看看能不能中', '过来水一手', '中奖什么的不可能的（￣▽￣）',
             '这辈子都不可能中奖的', '先拉低中奖率23333', '先抽奖，抽不到再说',
             '嘤嘤嘤', '捞一把', '我就想中一次', '拉低拉低', '试一试', '搞一搞', '听说我中奖了？'
-        ])
+        ]
         data = query_repost_db()
         for d in data:
+            message = random.choice(messages)
             self.forward(d['event_id'], d['uid'], message)
             self.follow(d['uid'])
 
-    #
+    # 删除动态
     def del_event(self, event_id):
         user = self.session.cookies.get_dict()
         url = 'http://music.163.com/weapi/event/delete'
@@ -457,31 +456,45 @@ class NeteaseLottery:
         response = self.session.post(url, params=params).json()
         printer(f"[CLIENT] del_event -> {response}")
 
-    # rollbak
+    # 回滚
     def rollback(self):
         data = query_delete_db()
         for d in data:
-            if self.win_check(d['lottery_id']):
-                if (d['lottery_time'] + 86400) > current_unix():
+            if not self.win_check(d['lottery_id']):
+                if (d['lottery_time'] + 10 * 60 * 60) > current_unix():
                     continue
-
-            self.del_event(d['pre_event_id'])
-            self.unfollow(d['uid'])
+                self.del_event(d['pre_event_id'])
+                self.unfollow(d['uid'])
             update_delete_db(d['lottery_id'])
 
-    # wincheck
+    # 中奖检测
     def win_check(self, lottery_id):
         url = f"http://music.163.com/api/lottery/event/get?lotteryId={lottery_id}"
         response = self.session.get(url).json()
         prize_ids = response['data']['lottery']['prizeId']
         prize_ids = prize_ids.strip('[').strip(']').split(',')
+
         for prize_id in prize_ids:
             data = response['data']['luckUsers'][prize_id]
             for d in data:
-                if d['userId'] == user_id:
-                    server_chan('网易云互动抽奖', f'恭喜 {user_id} 在互动抽奖里中奖啦,请尽快填写信息')
-                    return True
+                if d['userId'] == int(user_id):
+                    prizes = response['data']['prize']
+                    for index, prize in enumerate(prizes):
+                        if str(prize['id']) == prize_id:
+                            prize_level = index + 1
+                            prize_name = prize['name']
 
+                    info = f"""亲爱的 [{username} -> {user_id}] 您好:  
+        恭喜您在【{response['data']['user']['nickname']}】发布的动态互动抽奖活动中，喜获奖品啦!  
+        >>> 互动抽奖{lottery_id} -> {prize_level}等奖 -> {prize_name}] <<<  
+        请前往网易云音乐APP查看详情，尽快填写中奖信息或领取奖品。"""
+                    #  (https://music.163.com/st/m#/lottery/detail?id={lottery_id})
+                    for _ in range(10):
+                        status = server_chan('网易云互动抽奖', info)
+                        if not status:
+                            time.sleep(30)
+                        break
+                    return True
         return False
 
 
