@@ -26,6 +26,54 @@ pwd = ''
 port = 3306
 database = 'netease'
 
+#######################
+#      自用设置       #
+#######################
+sn_url = ''
+sn_channel = ''
+
+
+# 通知分发
+def notice_handler(title, content, retry_count=10):
+    # TODO 逻辑乱 待优化
+    for _ in range(retry_count):
+        if sn_url != '' and sn_channel != '':
+            status = server_notify(title, content)
+            if not status:
+                time.sleep(60)
+                continue
+            return True
+        elif sc_key != '':
+            status = server_chan(title, content)
+            if not status:
+                time.sleep(60)
+                continue
+            return True
+        else:
+            return False
+
+    return False
+
+
+# 中奖发送 自用
+def server_notify(title="", content=""):
+    try:
+        if sn_url != '' and sn_channel != '':
+            json = {
+                "channelName": sn_channel,
+                "text": content}
+            headers = {
+                'content-type': 'application/json'
+            }
+            response = requests.post(sn_url, headers=headers, json=json,
+                                     timeout=30).json()
+            # {"error":0,"message":"Done!"}
+            if response['message'] == 'Done!':
+                return True
+    except Exception as e:
+        printer(f"[SERCERNOTIFY] {e}")
+    return False
+
 
 # 中奖发送
 def server_chan(title="", content=""):
@@ -198,6 +246,7 @@ class NeteaseLottery:
     async def server(self):
         while True:
             try:
+                await asyncio.sleep(3 * 60)
                 self.scan_lottery_id()
                 self.repeat_lottery()
                 self.repeat_lottery_scan()
@@ -421,6 +470,29 @@ class NeteaseLottery:
         response = self.session.post(url, params=params).json()
         printer(f"[CLIENT] unfollow -> {response}")
 
+    # 过滤关键词 钓鱼测试
+    def filter_keywords(self, desp):
+        keys = [
+            '禁言', '测试', 'vcf', '体验中奖', '中奖的感觉', '赶脚', '感脚', '感jio',
+            '黑名单', '拉黑', '拉黑', '脸皮厚', '没有奖品', '无奖', '脸皮厚', 'ceshi',
+            '测试', '脚本', '抽奖号', '不要脸', '至尊vip会员7天', '高级会员7天', '万兴神剪手'
+        ]
+        for key in keys:
+            if key in desp:
+                return False
+        return True
+
+    # 过滤转发数据
+    def filter_repost(self, lottery_id):
+        data = self.get_lottery_info(lottery_id)
+        # 动态存在异常
+        if data is None:
+            return False, '获取动态信息异常'
+        # 动态存在异常关键字返回假
+        if not self.filter_keywords(data['event_msg']):
+            return False, '标题内容存在异常关键字'
+        return True, None
+
     # 转发动态
     def repost(self):
         messages = [
@@ -438,6 +510,12 @@ class NeteaseLottery:
         ]
         data = query_repost_db()
         for d in data:
+            event_status, event_status_msg = self.filter_repost(
+                d['lottery_id'])
+            if not event_status:
+                printer(
+                    f"[CLIENT] 当前动态 {d['lottery_id']} {event_status_msg} 跳过!"
+                )
             message = random.choice(messages)
             self.forward(d['event_id'], d['uid'], message)
             self.follow(d['uid'])
@@ -461,7 +539,7 @@ class NeteaseLottery:
         data = query_delete_db()
         for d in data:
             if not self.win_check(d['lottery_id']):
-                if (d['lottery_time'] + 10 * 60 * 60) > current_unix():
+                if (d['lottery_time'] + 5 * 60 * 60) > current_unix():
                     continue
                 self.del_event(d['pre_event_id'])
                 self.unfollow(d['uid'])
@@ -489,11 +567,8 @@ class NeteaseLottery:
         >>> 互动抽奖{lottery_id} -> {prize_level}等奖 -> {prize_name}] <<<  
         请前往网易云音乐APP查看详情，尽快填写中奖信息或领取奖品。"""
                     #  (https://music.163.com/st/m#/lottery/detail?id={lottery_id})
-                    for _ in range(10):
-                        status = server_chan('网易云互动抽奖', info)
-                        if not status:
-                            time.sleep(30)
-                        break
+                    # 提醒
+                    notice_handler('网易云互动抽奖', info)
                     return True
         return False
 
