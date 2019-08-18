@@ -516,6 +516,7 @@ class NeteaseLottery:
                 printer(
                     f"[CLIENT] 当前动态 {d['lottery_id']} {event_status_msg} 跳过!"
                 )
+                continue
             message = random.choice(messages)
             self.forward(d['event_id'], d['uid'], message)
             self.follow(d['uid'])
