@@ -539,6 +539,17 @@ class NeteaseLottery:
     def rollback(self):
         data = query_delete_db()
         for d in data:
+            event_status, event_status_msg = self.filter_repost(
+                d['lottery_id'])
+            if not event_status:
+                printer(
+                    f"[CLIENT] 当前动态 {d['lottery_id']} {event_status_msg} 跳过!"
+                )
+                self.del_event(d['pre_event_id'])
+                self.unfollow(d['uid'])
+                update_delete_db(d['lottery_id'])
+                continue
+
             if not self.win_check(d['lottery_id']):
                 if (d['lottery_time'] + 5 * 60 * 60) > current_unix():
                     continue
