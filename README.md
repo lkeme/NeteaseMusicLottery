@@ -1,11 +1,14 @@
 # NeteaseMusicLottery
 网易云音乐动态互动抽奖  / Netease Cloud Music Dynamics Lottery Draw
 
+## 交流
+Group: [55308141](https://jq.qq.com/?_wv=1027&k=5AIDaJg) 
+
 ## 版本
-version 0.0.1.0812 beta
+version 0.0.1.0822 beta
 
 ## 提示
-写着玩、写着玩、写着玩, 代码比较乱，只完成基础功能
+写着玩, 代码比较乱，只完成基础功能
 
 ## 安装
 1. 克隆项目代码
