@@ -146,7 +146,8 @@ def query_lottery_id_db(table='event_information'):
     row_list = cur.fetchall()
     db.close()
     cur.close()
-    return row_list
+    lottery_id_list = [row['lottery_id'] for row in row_list]
+    return lottery_id_list
 
 
 # 查询转发数据库
