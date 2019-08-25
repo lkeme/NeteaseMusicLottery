@@ -138,6 +138,17 @@ def query_data_db(table='event_information'):
     return row_list
 
 
+# 查询抽奖id
+def query_lottery_id_db(table='event_information'):
+    db, cur = db_conn()
+    sql = f'select lottery_id from {table}; '
+    cur.execute(sql)
+    row_list = cur.fetchall()
+    db.close()
+    cur.close()
+    return row_list
+
+
 # 查询转发数据库
 def query_valid_db(table='event_information'):
     db, cur = db_conn()
@@ -346,6 +357,7 @@ class NeteaseLottery:
                     'event_id': response['data']['lottery']['eventId'],
                     'lottery_id': response['data']['lottery']['lotteryId'],
                     'lottery_time': response['data']['lottery']['lotteryTime'],
+                    'prizes': response['data']['prize'],
                     'status': response['data']['lottery']['status']
                 }
                 printer(f"[SERVER] {lottery_id} -> 命中抽奖")
@@ -376,10 +388,7 @@ class NeteaseLottery:
 
     # 去重
     def repeat_lottery(self):
-        lottery_data = query_data_db()
-        temp_lottery_list = []
-        for lottery in lottery_data:
-            temp_lottery_list.append(lottery['lottery_id'])
+        temp_lottery_list = query_lottery_id_db()
         printer(f"[SERVER] 当前共有 {len(self.lottery_list)} 个需要去重")
         for lottery_id in self.lottery_list:
             if lottery_id in temp_lottery_list:
@@ -400,6 +409,7 @@ class NeteaseLottery:
             temp_lottery_list.append(lottery['lottery_id'])
         for lottery_id in temp_lottery_list:
             self.find_section(lottery_id)
+        temp_lottery_list = query_lottery_id_db()
         printer(f"[SERVER] 当前共有 {len(self.pre_scan_list)} 个需要扫描")
         for index, lottery_id in enumerate(self.pre_scan_list):
             # if index % 99 == 0:
@@ -475,12 +485,37 @@ class NeteaseLottery:
         keys = [
             '禁言', '测试', 'vcf', '体验中奖', '中奖的感觉', '赶脚', '感脚', '感jio',
             '黑名单', '拉黑', '拉黑', '脸皮厚', '没有奖品', '无奖', '脸皮厚', 'ceshi',
-            '测试', '脚本', '抽奖号', '不要脸', '至尊vip会员7天', '高级会员7天', '万兴神剪手'
+            '测试', '脚本', '抽奖号', '不要脸', '至尊vip会员7天', '高级会员7天', '万兴神剪手',
+            '测试', '加密', 'test', 'TEST', '钓鱼', '炸鱼', '调试'
         ]
         for key in keys:
             if key in desp:
                 return False
         return True
+
+    # 过滤关键词 奖品
+    def filter_prizes(self, prizes):
+        keys = [
+            '编曲', '作词', '半价', '打折', '机器', '禁言', '测试', 'vcf', '体验中奖',
+            '中奖的感觉', '录歌', '混音', '一毛', '0.1元', '1角', '0.5元', '5毛',
+            '赶脚', '感脚', '曲风', '专辑封面', '封面', '一元红包', '感jio', '名片赞',
+            '黑名单', '拉黑', '拉黑', '脸皮厚', '没有奖品', '无奖', '脸皮厚', 'ceshi',
+            '测试', '脚本', '抽奖号', '不要脸', '至尊vip会员7天', '高级会员7天', '万兴神剪手',
+            '测试', '加密', 'test', 'TEST', '钓鱼', '炸鱼', '调试', '歌曲定制', '学习修图',
+            '学习视频', '修图视频', '作词', '免费编曲', '后期制作', '编曲搬家', '写一首歌',
+            '内容自定', '音乐人一个', '私人唱歌'
+        ]
+        # 过滤 一等奖 奖品
+        for prize in prizes:
+            for key in keys:
+                if key in prize['name']:
+                    return False
+            break
+        return True
+
+    # 概率性抽奖
+    def filter_probability(self):
+        pass
 
     # 过滤转发数据
     def filter_repost(self, lottery_id):
@@ -491,6 +526,9 @@ class NeteaseLottery:
         # 动态存在异常关键字返回假
         if not self.filter_keywords(data['event_msg']):
             return False, '标题内容存在异常关键字'
+        # 奖品存在异常
+        if not self.filter_prizes(data['prizes']):
+            return False, '奖品内容存在异常关键字'
         return True, None
 
     # 转发动态

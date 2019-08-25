@@ -5,7 +5,7 @@
 Group: [55308141](https://jq.qq.com/?_wv=1027&k=5AIDaJg) 
 
 ## 版本
-version 0.0.1.0822 beta
+version 0.0.1.0825 beta
 
 ## 提示
 写着玩, 代码比较乱，只完成基础功能
@@ -54,6 +54,10 @@ database = 'netease'
 ```bash
 python netease_client.py
 ```
+
+## 打赏
+
+![](https://i.loli.net/2019/07/13/5d2963e5cc1eb22973.png)
 
 ## 流程
 1. 扫描分为匹配扫描(页面匹配) 、去重扫描(区间穷举)两种。
