@@ -13,12 +13,13 @@ import requests
 from Crypto.Cipher import AES
 
 
-def printer(info, *args):
+# 格式化打印
+def printer(genre, info, *args):
     at_now = int(time.time())
     time_arr = time.localtime(at_now)
     format_time = time.strftime("%Y-%m-%d %H:%M:%S", time_arr)
     # flag = "," if len(args) else " "
-    content = f'[{format_time}] {info} {" ".join(f"{str(arg)}" for arg in args)}'
+    content = f'[{format_time}] [{genre}] {info} {" ".join(f"{str(arg)}" for arg in args)}'
     print(content)
 
 
@@ -135,7 +136,7 @@ class NeteaseLogin:
         else:
             json_resp = response
         if json_resp['code'] == 200:
-            printer(f"[INFO]: Account -> {username}, login successfully...")
+            printer("LOGIN", f"Account -> {username}, login successfully...")
             return self.session
         elif json_resp['code'] == 501:
             raise RuntimeError(
