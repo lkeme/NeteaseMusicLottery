@@ -288,8 +288,8 @@ class NetEaseLottery:
                 await asyncio.sleep(3 * 60)
                 self.scan_lottery_id()
                 self.repeat_lottery()
-                printer("SERVER_MASTER", "休眠12小时后继续")
-                await asyncio.sleep(12 * 60 * 60)
+                printer("SERVER_MASTER", "休眠14小时后继续")
+                await asyncio.sleep(14 * 60 * 60)
             except Exception as e:
                 printer("SERVER_MASTER", f"流程出错 {e},稍后重试")
                 await asyncio.sleep(60)
@@ -301,8 +301,8 @@ class NetEaseLottery:
                 await asyncio.sleep(10 * 60)
                 self.designation_section()
                 self.repeat_lottery_scan()
-                printer("SERVER_SLAVE", "休眠24小时后继续")
-                await asyncio.sleep(24 * 60 * 60)
+                printer("SERVER_SLAVE", "休眠4小时后继续")
+                await asyncio.sleep(4 * 60 * 60)
             except Exception as e:
                 printer("SERVER_SLAVE", f"流程出错 {e},稍后重试")
                 await asyncio.sleep(60)
@@ -321,6 +321,7 @@ class NetEaseLottery:
         temp_lottery_list = query_lottery_id_db()
         printer("M_SCAN", f"当前共有 {len(self.lottery_list)} 个动态抽奖需要去重")
         for lottery_id in self.lottery_list:
+            time.sleep(2)
             if lottery_id in temp_lottery_list:
                 continue
             data = self.fetch_lottery_info(lottery_id)
@@ -399,7 +400,7 @@ class NetEaseLottery:
             for lottery_id in valid_lottery_list:
                 self.calc_section(lottery_id)
 
-        for _ in range(6000):
+        for _ in range(1000):
             if len(self.pre_scan_list) == 0:
                 break
             self.designation_list.append(self.pre_scan_list.pop(0))
@@ -413,6 +414,7 @@ class NetEaseLottery:
         exist_lottery_list = query_lottery_id_db()
         printer("F_SCAN", f"当前分配 {len(self.designation_list)} 个动态抽奖需要扫描")
         for lottery_id in self.designation_list:
+            time.sleep(2)
             if lottery_id in exist_lottery_list:
                 continue
             data = self.fetch_lottery_info(lottery_id)
@@ -682,4 +684,3 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.wait(tasks))
     loop.close()
-   
