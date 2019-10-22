@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+- author: Lkeme
+- contact: Useri@live.cn
+- file: setting
+- time: 2019/10/21 18:01
+- desc:
+"""
+
+""" 网易云账号配置 """
+ACCOUNTS = [
+    # default 扫描账号 (扫描、转发、删除等) 必须定义一个
+    # valid 有效账号 (转发、删除等) 视情况定义增加
+    # invalid 无效账号 (不做任何操作)
+    {
+        "user_id": "0",
+        "username": "your user name",
+        "password": "your password",
+        "type": "default",
+    },
+    {
+        "user_id": "0",
+        "username": "your user name",
+        "password": "your password",
+        "type": "valid",
+    },
+    {
+        "user_id": "0",
+        "username": "your user name",
+        "password": "your password",
+        "type": "invalid",
+    }
+]
+
+""" MYSQL数据库配置 """
+DATABASES = {
+    "default": {
+        "HOST": "localhost",
+        "PORT": 3306,
+        "USERNAME": "root",
+        "PASSWORD": "",
+        "DATABASE": "netease",
+    }
+}
+
+""" 通知服务配置 """
+NOTIFICATION = {
+    # 开关
+    "enable": False,
+    "type": "server_chan",
+    # Server酱
+    "server_chan":
+        {
+            "key": "",
+        },
+    # tg_bot  https://github.com/Fndroid/tg_push_bot
+    "tg_bot":
+        {
+            "api": "https://xxxx.com/sendMessage/:Token",
+        },
+    # 自用通知服务
+    "personal":
+        {
+            "url": "",
+            "channel": ""
+        }
+}
+
+
+class ConfigError(BaseException):
+    pass
+
+
+def check_config():
+    # raise ConfigError("test")
+    pass
+
+
+check_config()

@@ -1,90 +1,62 @@
 #!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 
-import os
-import json
-import codecs
-import base64
 import hashlib
 import re
 import random
-import time
 import requests
-from Crypto.Cipher import AES
+from Util import EncryptParams, Printer
+import faker
+
+fake = faker.Faker(locale='zh_CN')
 
 
-# 格式化打印
-def printer(genre, info, *args):
-    at_now = int(time.time())
-    time_arr = time.localtime(at_now)
-    format_time = time.strftime("%Y-%m-%d %H:%M:%S", time_arr)
-    # flag = "," if len(args) else " "
-    content = f'[{format_time}] [{genre}] {info} {" ".join(f"{str(arg)}" for arg in args)}'
-    print(content)
-
-
-# 参数加解密
-class EncryptParams:
+class NetEaseLogin:
 
     def __init__(self):
-        self.modulus = '00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7'
-        self.nonce = '0CoJUm6Qyw8W8jud'
-        self.pubKey = '010001'
-
-    def get(self, text):
-        text = json.dumps(text)
-        secKey = self._createSecretKey(16)
-        encText = self._aesEncrypt(self._aesEncrypt(text, self.nonce), secKey)
-        encSecKey = self._rsaEncrypt(secKey, self.pubKey, self.modulus)
-        post_data = {
-            'params': encText,
-            'encSecKey': encSecKey
-        }
-        return post_data
-
-    def _aesEncrypt(self, text, secKey):
-        pad = 16 - len(text) % 16
-        if isinstance(text, bytes):
-            text = text.decode('utf-8')
-        text = text + str(pad * chr(pad))
-        secKey = secKey.encode('utf-8')
-        encryptor = AES.new(secKey, 2, b'0102030405060708')
-        text = text.encode('utf-8')
-        ciphertext = encryptor.encrypt(text)
-        ciphertext = base64.b64encode(ciphertext)
-        return ciphertext
-
-    def _rsaEncrypt(self, text, pubKey, modulus):
-        text = text[::-1]
-        rs = int(codecs.encode(text.encode('utf-8'), 'hex_codec'), 16) ** int(
-            pubKey, 16) % int(modulus, 16)
-        return format(rs, 'x').zfill(256)
-
-    def _createSecretKey(self, size):
-        return (''.join(
-            map(lambda xx: (hex(ord(xx))[2:]), str(os.urandom(size)))))[0:16]
-
-
-class NeteaseLogin:
-
-    def __init__(self, **kwargs):
         self.ua_list = [
+            'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_9_7 rv:2.0; ff-SN) AppleWebKit/531.5.1 (KHTML, like Gecko) Version/5.0.2 Safari/531.5.1',
+            'Mozilla/5.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.1)',
+            'Opera/8.14.(X11; Linux i686; lzh-TW) Presto/2.9.176 Version/10.00',
+            'Opera/8.18.(Windows NT 5.01; ku-TR) Presto/2.9.181 Version/12.00',
+            'Mozilla/5.0 (compatible; MSIE 5.0; Windows NT 4.0; Trident/4.1)',
+            'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_9_5; rv:1.9.5.20) Gecko/2012-08-22 13:50:54 Firefox/11.0',
+            'Opera/8.44.(Windows NT 4.0; da-DK) Presto/2.9.189 Version/11.00',
+            'Mozilla/5.0 (Windows NT 6.0) AppleWebKit/5341 (KHTML, like Gecko) Chrome/35.0.899.0 Safari/5341',
+            'Mozilla/5.0 (Windows; U; Windows 98; Win 9x 4.90) AppleWebKit/534.50.5 (KHTML, like Gecko) Version/5.1 Safari/534.50.5',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:46.0) Gecko/20100101 Firefox/46.0',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/603.2.4 (KHTML, like Gecko) Version/10.1.1 Safari/603.2.4',
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:46.0) Gecko/20100101 Firefox/46.0',
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/13.10586'
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/13.10586',
+            'Mozilla/5.0 (iPod; U; CPU iPhone OS 3_0 like Mac OS X; fr-CH) AppleWebKit/535.40.2 (KHTML, like Gecko) Version/4.0.5 Mobile/8B113 Safari/6535.40.2',
         ]
         self.headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Origin': 'https://music.163.com',
             'Referer': 'https://music.163.com/',
             'Cookie': 'os=pc',
-            'User-Agent': random.choice(self.ua_list)
+            'User-Agent': random.choice(self.ua_list),
         }
         self.enc = EncryptParams()
+        self.log = Printer()
         self.session = requests.Session()
+
+    # 更新 Session
+    def update_session(self):
+        self.session.headers.update(
+            {
+                'Origin': 'https://music.163.com',
+                'Referer': 'https://music.163.com/',
+                'User-Agent': fake.user_agent(),
+            }
+        )
+        # 利用RequestsCookieJar获取
+        jar = requests.cookies.RequestsCookieJar()
+        jar.set('os', random.choice(['pc', 'osx', 'android']))
+        self.session.cookies.update(jar)
+        return self.session
 
     # 邮箱登录
     def email_login(self, username, password):
@@ -136,16 +108,22 @@ class NeteaseLogin:
         else:
             json_resp = response
         if json_resp['code'] == 200:
-            printer("LOGIN", f"Account -> {username}, login successfully...")
-            return self.session
+            self.log.printer(
+                "LOGIN",
+                f"Account -> {username}, login successfully..."
+            )
+            return self.update_session()
         elif json_resp['code'] == 501:
-            raise RuntimeError(
+            self.log.printer(
+                "LOGIN",
                 f"[ERROR]: Account -> {username}, fail to login, {json_resp['msg']}..."
             )
         else:
-            raise RuntimeError(
+            self.log.printer(
+                "LOGIN",
                 f"[ERROR]: Account -> {username}, fail to login, {json_resp}..."
             )
+        return False
 
     # 匹配登录类型
     def match_login_type(self, username):

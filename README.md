@@ -5,9 +5,11 @@
 Group: [55308141](https://jq.qq.com/?_wv=1027&k=5AIDaJg) 
 
 ## 版本
-version 0.0.1.0918 beta
+[version 0.1.0.1022 beta mater](https://github.com/lkeme/NeteaseMusicLottery/tree/master)
+[version 0.1.0.1022 beta develop](https://github.com/lkeme/NeteaseMusicLottery/tree/develop)
+[version 0.0.1.0918 beta 0.0.1](https://github.com/lkeme/NeteaseMusicLottery/tree/0.0.1)
 
-## 提示
+## 公告
 写着玩， 代码比较乱，只完成基础功能
 
 ## 安装
@@ -26,33 +28,72 @@ pip install -r requirement.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 mysql中创建数据库 `netease`， 并导入数据结构`netease.sql`
 
 ## 使用
-1. 写入必要信息
+1. 填写必要信息
 ```python
-# netease_client.py
-#######################
-#       账户设置       #
-#######################
-username = ""
-password = ""
-user_id = ""
-sc_key = ""
-# 用户名/密码/用户ID/server酱(用于中奖推送)
+# 修改文件 --> Config/setting.py 
+# """ 网易云账号配置 """
+ACCOUNTS = [
+    # default 扫描账号 (扫描、转发、删除等) 必须定义一个
+    # valid 有效账号 (转发、删除等) 视情况定义增加
+    # invalid 无效账号 (不做任何操作)
+    {
+        "user_id": "",
+        "username": "",
+        "password": "",
+        "type": "default",
+    },
+    {
+        "user_id": "0",
+        "username": "your user name",
+        "password": "your password",
+        "type": "invalid",
+    },
+    {
+        "user_id": "0",
+        "username": "your user name",
+        "password": "your password",
+        "type": "invalid",
+    }
+]
 
-#######################
-#      程序设置       #
-#######################
-host = 'localhost'
-user = 'root'
-pwd = ''
-port = 3306
-database = 'netease'
+""" 通知服务配置 """
+NOTIFICATION = {
+    # 开关
+    "enable": True,
+    "type": "server_chan",
+    # Server酱
+    "server_chan":
+        {
+            "key": "",
+        },
+    # tg_bot  https://github.com/Fndroid/tg_push_bot
+    "tg_bot":
+        {
+            "api": "https://xxxx.com/sendMessage/:Token",
+        },
+    # 自用通知服务
+    "personal":
+        {
+            "url": "",
+            "channel": ""
+        }
+}
 
-# 数据库连接/用户名/密码/端口/库名
+""" MYSQL数据库配置 """
+DATABASES = {
+    "default": {
+        "HOST": "localhost",
+        "PORT": 3306,
+        "USERNAME": "root",
+        "PASSWORD": "123456",
+        "DATABASE": "netease",
+    }
+}
 ```
 
 2. 运行
 ```bash
-python netease_client.py
+python main.py
 ```
 
 ## 打赏

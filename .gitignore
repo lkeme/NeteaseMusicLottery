@@ -103,4 +103,7 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-netease_client_dev.py
+# Custom
+/g20191022
+/s20191022
+/Config/setting.py
