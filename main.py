@@ -253,8 +253,7 @@ class NetEaseLottery:
             valid_lottery_list = []
             for lottery in lottery_data:
                 valid_lottery_list.append(lottery['lottery_id'])
-            for lottery_id in valid_lottery_list:
-                self.calc_section(lottery_id)
+            self.calc_section(valid_lottery_list)
 
         for _ in range(1000):
             if len(self.pre_scan_list) == 0:
@@ -272,7 +271,7 @@ class NetEaseLottery:
         self.log.printer("F_SCAN",
                          f"当前分配 {len(self.designation_list)} 个动态抽奖需要扫描")
         for lottery_id in self.designation_list:
-            time.sleep(2)
+            time.sleep(random.uniform(1.5, 2))
             if lottery_id in exist_lottery_list:
                 continue
             data = self.fetch_lottery_info(lottery_id)
@@ -351,17 +350,25 @@ class NetEaseLottery:
             return None
 
     # 计算区间
-    def calc_section(self, lottery_id):
-        # TODO 代码待优化
-        length = len(str(lottery_id)) - 1
-        prefix = str(lottery_id)[0]
-        start = int(prefix + "".join(['0' for _ in range(length)]))
-        end = int(prefix + "".join(['9' for _ in range(length)])) + 2
-        self.pre_scan_list = self.pre_scan_list + list(range(start, end))
-        self.pre_scan_list = list(set(self.pre_scan_list))
-        # 第二方案
-        # self.pre_scan_list = list(set(self.pre_scan_list).union(set(list(range(start, end)))))
-        # self.log.printer(f"当前区间 {start},{end} 已有数据 {len(self.pre_scan_list)}")
+    def calc_section(self, lottery_id_list):
+        scan_list = []
+        for lottery_id in lottery_id_list:
+            if int(lottery_id) < 10000:
+                start = 1
+                end = 9999
+            else:
+                start = int(f"{str(lottery_id)[:-4]}0000")
+                end = int(f"{str(lottery_id)[:-4]}9999")
+            scan_list.append([start, end])
+        for scan in scan_list:
+            if scan_list.count(scan) == 1:
+                continue
+            # 第一方案
+            self.pre_scan_list += list(range(scan[0], scan[1]))
+            self.pre_scan_list = list(set(self.pre_scan_list))
+            # 第二方案
+            # self.pre_scan_list = list(set(self.pre_scan_list).union(set(list(range(start, end)))))
+            # self.log.printer(f"当前区间 {start},{end} 已有数据 {len(self.pre_scan_list)}")
 
     # 转发
     def publish(self, user, raw_event_id, event_id, event_uid, msg):

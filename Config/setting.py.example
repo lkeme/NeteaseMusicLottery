@@ -14,19 +14,19 @@ ACCOUNTS = [
     # valid 有效账号 (转发、删除等) 视情况定义增加
     # invalid 无效账号 (不做任何操作)
     {
-        "user_id": "0",
+        "user_id": "your user id",
         "username": "your user name",
         "password": "your password",
         "type": "default",
     },
     {
-        "user_id": "0",
+        "user_id": "your user id",
         "username": "your user name",
         "password": "your password",
         "type": "valid",
     },
     {
-        "user_id": "0",
+        "user_id": "your user id",
         "username": "your user name",
         "password": "your password",
         "type": "invalid",
