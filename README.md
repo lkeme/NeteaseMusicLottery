@@ -5,18 +5,19 @@
 Group: [55308141](https://jq.qq.com/?_wv=1027&k=5AIDaJg) 
 
 ## 版本
-[version 0.1.0.1022 beta mater](https://github.com/lkeme/NeteaseMusicLottery/tree/master)
-[version 0.1.0.1022 beta develop](https://github.com/lkeme/NeteaseMusicLottery/tree/develop)
-[version 0.0.1.0918 beta 0.0.1](https://github.com/lkeme/NeteaseMusicLottery/tree/0.0.1)
+version 0.1.0.1023 beta # [mater](https://github.com/lkeme/NeteaseMusicLottery/tree/master)
+\
+version 0.1.0.1023 beta # [develop](https://github.com/lkeme/NeteaseMusicLottery/tree/develop)
+\
+version 0.0.1.0918 beta # [0.0.1](https://github.com/lkeme/NeteaseMusicLottery/tree/0.0.1)
 
 ## 公告
-写着玩， 代码比较乱，只完成基础功能
+写着玩，没多大用处，代码较乱，只完成基础功能。
 
 ## 安装
 1. 克隆项目代码
 ```bash
 git clone https://github.com/lkeme/NeteaseMusicLottery.git
-
 cd NeteaseMusicLottery
 ```
 2. 安装环境依赖 **env python3.6+**
@@ -24,11 +25,23 @@ cd NeteaseMusicLottery
 pip install -r requirement.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-3. 导入数据
+3. 导入数据文件
 mysql中创建数据库 `netease`， 并导入数据结构`netease.sql`
+```mysql
+create DATABASE netease;
+use netease;
+source /your path/netease.sql;
+```
 
-## 使用
-1. 填写必要信息
+4. 复制配置文件
+```bash
+# linux
+cd Config && cp setting.py.example setting.py
+# windows
+手动重命名 
+```
+
+5. 填写配置信息
 ```python
 # 修改文件 --> Config/setting.py 
 # """ 网易云账号配置 """
@@ -91,7 +104,7 @@ DATABASES = {
 }
 ```
 
-2. 运行
+## 使用
 ```bash
 python main.py
 ```

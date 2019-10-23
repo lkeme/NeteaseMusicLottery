@@ -549,7 +549,7 @@ class NetEaseLottery:
                     self.db.change_table(self.used_event)
                     pre_d = self.db.query_pre_event(user['username'], d['id'])
                     if pre_d is not None:
-                        self.del_event(user, pre_d[0])
+                        self.del_event(user, pre_d['pre_event_id'])
                         self.un_follow(user, d['uid'])
                     continue
 
@@ -559,7 +559,7 @@ class NetEaseLottery:
                     self.db.change_table(self.used_event)
                     pre_d = self.db.query_pre_event(user['username'], d['id'])
                     if pre_d is not None:
-                        self.del_event(user, pre_d[0])
+                        self.del_event(user, pre_d['pre_event_id'])
                         self.un_follow(user, d['uid'])
             self.db.change_table(self.raw_event)
             self.db.update_raw_deleted(d['lottery_id'])
