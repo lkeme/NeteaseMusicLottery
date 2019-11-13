@@ -201,7 +201,7 @@ class NetEaseLottery:
         }
         for act_id in act_ids.keys():
             for page in range(0, scan_page):
-                self.log.printer("M_SCAN", f'开始扫描 {act_id} 第 {page+1} 页')
+                self.log.printer("M_SCAN", f'开始扫描 {act_id} 第 {page + 1} 页')
                 while True:
                     try:
                         params = {
@@ -465,7 +465,9 @@ class NetEaseLottery:
             '学习视频', '修图视频', '作词', '免费编曲', '后期制作', '编曲搬家',
             '内容自定', '音乐人一个', '私人唱歌', '感恩', '作业', '八字', '算命',
             '电台', '情感视频', '万兴神剪手', '学习修图', '写一首歌', 'ceshi',
-            '管饱', 'dong tai ga', '电话唱歌', '感谢转发'
+            '管饱', 'dong tai ga', '电话唱歌', '感谢转发', '非独家使用权', '前排沙发',
+            '琴谱', '有就送', '什么也不给', '什么都没有', '租赁', '伴奏', '定制beat',
+            '定制logo', '惊喜软件', '终于中奖',
         ]
         # 过滤 一等奖 奖品
         for prize in prizes:
