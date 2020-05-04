@@ -487,7 +487,7 @@ class NetEaseLottery:
             '学霸', 'buff', '头像', '剩的', '中奖的', 'Ziyoda', 'Hilola', 'beden', '新专',
             '采样', '音频', '海报', '关注', '粉丝ID', '电子书', '我', '半价', '优惠券',
             '微博', '互粉', '真心话', '回答', '签名海报', '不想要', '抱抱', '拥抱', 'WAV',
-            '伴奏', '邀请函',
+            '伴奏', '邀请函', '你猜猜', '什么也没有', '什么都', '什么也', '这不是抽奖',
         ]
         # 过滤 一等奖 奖品
         for prize in prizes:
@@ -579,7 +579,8 @@ class NetEaseLottery:
                     pre_d = self.db.query_pre_event(user['username'], d['id'])
                     if pre_d is not None:
                         self.del_event(user, pre_d['pre_event_id'])
-                        self.un_follow(user, d['uid'])
+                    # 如果没查询到 取消关注 TODO 错误回滚
+                    self.un_follow(user, d['uid'])
                     continue
 
                 if not self.win_check(user, d['lottery_id']):
@@ -589,7 +590,8 @@ class NetEaseLottery:
                     pre_d = self.db.query_pre_event(user['username'], d['id'])
                     if pre_d is not None:
                         self.del_event(user, pre_d['pre_event_id'])
-                        self.un_follow(user, d['uid'])
+                    # 如果没查询到 取消关注 TODO 错误回滚
+                    self.un_follow(user, d['uid'])
             self.db.change_table(self.raw_event)
             self.db.update_raw_deleted(d['lottery_id'])
 

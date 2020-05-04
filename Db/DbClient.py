@@ -62,7 +62,8 @@ class DbClient(object):
         sql = f"select * from {self.name} where lottery_time > %s"
         self.cursor.execute(sql, (current_unix(),))
         row_list = self.cursor.fetchall()
-        self.log.printer("DB", f"查询有效数据库完毕 data->{len(row_list)}")
+        self.log.printer("DB",
+                         f"查询有效数据库完毕 data->{self.length(row_list)}")
         return row_list
 
     # 查询转发数据库
@@ -70,7 +71,7 @@ class DbClient(object):
         sql = f"select * from {self.name} where  ((lottery_time - 43200*1000) < %s and lottery_time > %s and is_reposted=0)"
         self.cursor.execute(sql, (current_unix(), current_unix()))
         row_list = self.cursor.fetchall()
-        self.log.printer("DB", f"查询转发数据库完毕 data->{len(row_list)}")
+        self.log.printer("DB", f"查询转发数据库完毕 data->{self.length(row_list)}")
         return row_list
 
     # 查询删除数据库
@@ -78,7 +79,7 @@ class DbClient(object):
         sql = f"select * from {self.name} where ((lottery_time + 3600*1000) < %s and is_reposted=1 and is_deleted=0)"
         self.cursor.execute(sql, (current_unix(),))
         row_list = self.cursor.fetchall()
-        self.log.printer("DB", f"查询删除数据库完毕 data->{len(row_list)}")
+        self.log.printer("DB", f"查询删除数据库完毕 data->{self.length(row_list)}")
         return row_list
 
     # 查询event_raw_id 2 pre_event_id数据库
@@ -86,7 +87,7 @@ class DbClient(object):
         sql = f"select pre_event_id from {self.name} where (username = %s and raw_event_id = %s)"
         self.cursor.execute(sql, (username, event_id))
         row_list = self.cursor.fetchone()
-        self.log.printer("DB", f"查询PRE数据库完毕 data->{len(row_list)}")
+        self.log.printer("DB", f"查询PRE数据库完毕 data->{self.length(row_list)}")
         return row_list
 
     # 插入原始数据
@@ -147,6 +148,10 @@ class DbClient(object):
     # 改变表
     def change_table(self, name):
         self.name = name
+
+    @staticmethod
+    def length(data):
+        return 0 if data is None else len(data)
 
 
 if __name__ == '__main__':

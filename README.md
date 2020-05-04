@@ -5,11 +5,7 @@
 Group: [55308141](https://jq.qq.com/?_wv=1027&k=5AIDaJg) 
 
 ## 版本
-version 0.1.0.1113 beta # [mater](https://github.com/lkeme/NeteaseMusicLottery/tree/master)
-\
-version 0.1.0.1113 beta # [develop](https://github.com/lkeme/NeteaseMusicLottery/tree/develop)
-\
-version 0.0.1.0918 beta # [0.0.1](https://github.com/lkeme/NeteaseMusicLottery/tree/0.0.1)
+version 0.2.0.0504 beta # [mater](https://github.com/lkeme/NeteaseMusicLottery/tree/master)
 
 ## 公告
 写着玩，没多大用处，代码较乱，只完成基础功能。
