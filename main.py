@@ -488,6 +488,12 @@ class NetEaseLottery:
             '采样', '音频', '海报', '关注', '粉丝ID', '电子书', '我', '半价', '优惠券',
             '微博', '互粉', '真心话', '回答', '签名海报', '不想要', '抱抱', '拥抱', 'WAV',
             '伴奏', '邀请函', '你猜猜', '什么也没有', '什么都', '什么也', '这不是抽奖',
+            '真欧', '很欧', '使用权', '曲谱', '啥也没有', '木有', '哈哈哈', '车载音乐',
+            '中奖的', '中奖滴', '会员歌曲', '一首歌', '必唱', '发文件', '词作', '购买资格',
+            '粉群', '优惠', '折扣', 'hoholive', 'surat', 'hisyat', '免费观', '免费演',
+            '免费门', '谢谢参与', 'vx call u', '新婚快乐', '歌曲使用权', '普通mp3使用权',
+            '破解版', '土嗨', '给你写', '普通mp3', '啥也不是', '歌曲大礼包', '歌手大礼包',
+            '无损wav', 'mp3使用权', 'wav使用权', '曲谱',
         ]
         # 过滤 一等奖 奖品
         for prize in prizes:
@@ -602,25 +608,28 @@ class NetEaseLottery:
         prize_ids = response['data']['lottery']['prizeId']
         prize_ids = prize_ids.strip('[').strip(']').split(',')
 
-        for prize_id in prize_ids:
-            data = response['data']['luckUsers'][prize_id]
-            for d in data:
-                if d['userId'] == int(user['user_id']):
-                    prizes = response['data']['prize']
-                    for index, prize in enumerate(prizes):
-                        if str(prize['id']) == prize_id:
-                            prize_level = index + 1
-                            prize_name = prize['name']
+        try:
+            for prize_id in prize_ids:
+                data = response['data']['luckUsers'][prize_id]
+                for d in data:
+                    if d['userId'] == int(user['user_id']):
+                        prizes = response['data']['prize']
+                        for index, prize in enumerate(prizes):
+                            if str(prize['id']) == prize_id:
+                                prize_level = index + 1
+                                prize_name = prize['name']
 
-                    info = f"""亲爱的 [{user['username']} -> {user['user_id']}] 您好:  
-    恭喜您在【{response['data']['user']['nickname']}】发布的动态互动抽奖活动中，喜获奖品啦!  
-    >>> 互动抽奖{lottery_id} -> {prize_level}等奖 -> {prize_name}] <<<  
-    请前往网易云音乐APP查看详情，尽快填写中奖信息或领取奖品。"""
-                    self.log.printer("WIN", info)
-                    #  (https://music.163.com/st/m#/lottery/detail?id={lottery_id})
-                    # 中奖提醒
-                    Notification().notice_handler('网易云互动抽奖', info)
-                    return True
+                        info = f"""亲爱的 [{user['username']} -> {user['user_id']}] 您好:  
+            恭喜您在【{response['data']['user']['nickname']}】发布的动态互动抽奖活动中，喜获奖品啦!  
+            >>> 互动抽奖{lottery_id} -> {prize_level}等奖 -> {prize_name}] <<<  
+            请前往网易云音乐APP查看详情，尽快填写中奖信息或领取奖品。"""
+                        self.log.printer("WIN", info)
+                        #  (https://music.163.com/st/m#/lottery/detail?id={lottery_id})
+                        # 中奖提醒
+                        Notification().notice_handler('网易云互动抽奖', info)
+                        return True
+        except Exception as e:
+            return False
         return False
 
 
