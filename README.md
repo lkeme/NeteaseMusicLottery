@@ -1,14 +1,7 @@
 # NeteaseMusicLottery
-网易云音乐动态互动抽奖  / Netease Cloud Music Dynamics Lottery Draw
-
-## 交流
-Group: [55308141](https://jq.qq.com/?_wv=1027&k=5AIDaJg) 
-
-## 版本
-version 0.2.0.0504 beta # [mater](https://github.com/lkeme/NeteaseMusicLottery/tree/master)
 
 ## 公告
-写着玩，没多大用处，代码较乱，只完成基础功能。
+网易云音乐动态互动抽奖测试学习
 
 ## 安装
 1. 克隆项目代码
@@ -23,7 +16,7 @@ pip install -r requirement.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 3. 导入数据文件
 mysql中创建数据库 `netease`， 并导入数据结构`netease.sql`
-```mysql
+```sql
 create DATABASE netease;
 use netease;
 source /your path/netease.sql;
