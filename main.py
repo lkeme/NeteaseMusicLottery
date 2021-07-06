@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import json
 import re
 import time
-import random
-import traceback
-import asyncio
-from Util.Function import current_unix
-from Util import EncryptParams, Printer, NetEaseLogin, Notification
-from Db.DbClient import DbClient
-from Config.ConfigGetter import config
 import faker
+import random
+import asyncio
+import traceback
+from Db.DbClient import DbClient
+from Util.Function import current_unix
+from Config.ConfigGetter import config
+from Util import EncryptParams, Printer, NetEaseLogin, Notification
 
 fake = faker.Faker(locale='zh_CN')
 
@@ -493,7 +492,13 @@ class NetEaseLottery:
             '粉群', '优惠', '折扣', 'hoholive', 'surat', 'hisyat', '免费观', '免费演',
             '免费门', '谢谢参与', 'vx call u', '新婚快乐', '歌曲使用权', '普通mp3使用权',
             '破解版', '土嗨', '给你写', '普通mp3', '啥也不是', '歌曲大礼包', '歌手大礼包',
-            '无损wav', 'mp3使用权', 'wav使用权', '曲谱',
+            '无损wav', 'mp3使用权', 'wav使用权', '曲谱', '阿里嘎多', '代金券', '你的想法',
+            '封面制作', '一句喵喵喵', '互关', '逢考必过', '云豆', '擁抱', '音色包', '点赞',
+            '动态', '冠军照', '手抄', '邮费自理', '*7天', '7天', '周卡', '七日', '七天',
+            '钥匙扣', '中奖辣', '7日', '给我转账', '体验卡', '吻', '么么', '没有', '分享图片',
+            '黑胶会员7天', '黑胶会员5天', '评论区', '热评', '微信', 'vx', '原创', '参与',
+            '文档', '谢谢', '感谢', '祝福', '沾沾福', '一周', '歌曲', '评论', '赞赏', ',',
+            '签名', '文件', '英语四级', '新年快乐',
         ]
         # 过滤 一等奖 奖品
         for prize in prizes:
